@@ -148,7 +148,29 @@ function assignAudioToBone(boneId, audio) {
   boneEl.classList.add("assigned");
 
   checkPlaybackReady();
+
+  updateProgress();
+
+  closeAudioPanel(); // ← 追加
 }
+
+function closeAudioPanel() {
+  document.getElementById("audio-panel")
+    .classList.add("hidden");
+  selectedBone = null;
+}
+
+
+document.addEventListener("click", (e) => {
+  const panel = document.getElementById("audio-panel");
+
+  if (panel.classList.contains("hidden")) return;
+  if (panel.contains(e.target)) return;
+  if (e.target.closest(".bone")) return;
+
+  closeAudioPanel();
+});
+
 
 
 /* =========================
@@ -178,6 +200,9 @@ document
 
 
 function startPlayback() {
+
+  closeAudioPanel();
+  
   if (isPlaying) return;
 
   isPlaying = true;
@@ -203,24 +228,66 @@ function startPlayback() {
 }
 
 
-function stopPlayback() {
-  playingAudios.forEach(a => {
-    a.pause();
-    a.currentTime = 0;
-  });
+function startPlayback() {
+  if (isPlaying) return;
+
+  isPlaying = true;
+  stopPreview();
+
+  const overlay = document.getElementById("loading-overlay");
+  const progressText = document.getElementById("loading-progress");
+
+  overlay.classList.remove("hidden");
 
   playingAudios = [];
+  let loadedCount = 0;
+  const total = 7;
 
-  if (playbackTimer) {
-    clearTimeout(playbackTimer);
-    playbackTimer = null;
-  }
+  Object.values(boneAssignments).forEach(audio => {
+    const a = new Audio(audio.file);
+    a.preload = "auto";
 
-  isPlaying = false;
+    a.addEventListener("canplaythrough", () => {
+      loadedCount++;
+      progressText.textContent = `${loadedCount} / ${total}`;
 
+      if (loadedCount === total) {
+        overlay.classList.add("hidden");
+        actuallyPlayAll();
+      }
+    }, { once: true });
+
+    playingAudios.push(a);
+  });
+}
+
+
+
+function actuallyPlayAll() {
   const playBtn = document.getElementById("play-button");
-  playBtn.disabled = false;
-  playBtn.textContent = "▶︎ 再生";
+  playBtn.disabled = true;
+  playBtn.textContent = "再生中…";
 
-  console.log("再生終了（5分）");
+  playingAudios.forEach(a => {
+    a.currentTime = 0;
+    a.play().catch(err => console.warn(err));
+  });
+
+  playbackTimer = setTimeout(stopPlayback, 300000);
+}
+
+
+
+
+function updateProgress() {
+  const assignedCount = Object.values(boneAssignments)
+    .filter(a => a !== null).length;
+
+  const percent = Math.round((assignedCount / 7) * 100);
+
+  const bar = document.getElementById("progress-bar");
+  const text = document.getElementById("progress-text");
+
+  bar.style.width = `${percent}%`;
+  text.textContent = `${percent}%`;
 }
