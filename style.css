@@ -2,17 +2,6 @@
    GLOBAL
 ========================= */
 
-/* モバイル用 */
-/* モバイルだけ少し小さく */
-@media (max-width: 768px) {
-  #skeleton-scale {
-    align-items: center;   /* ← ここが決定打 */
-  }
-
-  #skeleton-inner {
-    transform: scale(0.16);
-  }
-}
 
 
 * {
@@ -44,14 +33,12 @@ h1 {
 ========================= */
 
 #skeleton-scale {
-  position: relative;
+  position: relative;   /* ← fixed をやめる */
   width: 100vw;
-  overflow: visible;
-   position: fixed;
-  inset: 0;
+  height: 100svh;       /* ← iOS用 “実表示高さ” */
   display: flex;
   justify-content: center;
-  align-items: flex-end;
+  align-items: center;  /* ← 中央基準 */
   overflow: hidden;
     pointer-events: auto;
 }
@@ -64,20 +51,21 @@ h1 {
 }
 
 #skeleton-inner {
-  transform: scale(0.25);
   transform-origin: bottom center;
+  transform: scale(0.25) translateY(8%);
 }
 
 
 /* モバイルだけ少し小さく */
 @media (max-width: 768px) {
+  #skeleton-scale {
+    align-items: center;   /* ← ここが決定打 */
+  }
+
   #skeleton-inner {
-    transform: scale(0.16);
+  transform: scale(0.16) translateY(6%);
   }
 }
-
-
-
 
 #bone-1 {
   position: absolute;
