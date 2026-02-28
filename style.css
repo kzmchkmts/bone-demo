@@ -2,6 +2,14 @@
    GLOBAL
 ========================= */
 
+/* モバイル用 */
+@media (max-width: 768px) {
+  #skeleton-inner {
+    transform: scale(0.16);
+  }
+}
+
+
 * {
   box-sizing: border-box;
 }
