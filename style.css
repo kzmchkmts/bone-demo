@@ -56,16 +56,7 @@ h1 {
 }
 
 
-/* モバイルだけ少し小さく */
-@media (max-width: 768px) {
-  #skeleton-scale {
-    align-items: center;   /* ← ここが決定打 */
-  }
 
-  #skeleton-inner {
-  transform: scale(0.16) translateY(6%);
-  }
-}
 
 #bone-1 {
   position: absolute;
@@ -317,6 +308,15 @@ svg.bone.head {
 #loading-progress {
   font-size: 14px;
 }
+
+
+@media (max-width: 768px) {
+  #skeleton-inner {
+    transform: scale(0.16) translateY(6%);
+  }
+}
+
+
 
 /*
 svg.bone {
