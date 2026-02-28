@@ -1,7 +1,6 @@
 /* =========================
    AUDIO BANK
 ========================= */
-console.log("progress-wrapper:", document.getElementById("progress-wrapper"));
 
 
 const audioBank = [
