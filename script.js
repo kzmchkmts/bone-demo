@@ -283,7 +283,7 @@ function actuallyPlayAll() {
 
 
 function updateProgress() {
-console.log("updateProgress called");
+
     ensureProgressWrapper(); 
   const assignedCount = Object.values(boneAssignments)
     .filter(a => a !== null).length;
@@ -320,3 +320,15 @@ function ensureProgressWrapper() {
   document.body.appendChild(wrapper);
   return wrapper;
 }
+
+
+function updateSkeletonScale() {
+  const vh = window.innerHeight;
+  const baseHeight = 3000; // 骸骨SVGの元高さ
+  const scale = Math.min(0.25, vh / baseHeight);
+  document.getElementById("skeleton-inner").style.transform =
+    `scale(${scale})`;
+}
+
+window.addEventListener("resize", updateSkeletonScale);
+updateSkeletonScale();
