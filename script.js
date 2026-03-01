@@ -4,6 +4,8 @@
 
 const audioBank = [
   { id: "AomorikenHirakawashi_Senkotsu_202556", file: "audio/AomorikenHirakawashi_Senkotsu_202556.mp3" },
+  { id: "AomorikenHirakawashi_Senkotsu_202556", file: "audio/AomorikenHirakawashi_Senkotsu_202556.mp3" },
+  { id: "AomorikenHirakawashi_Senkotsu_202556", file: "audio/AomorikenHirakawashi_Senkotsu_202556.mp3" },
   { id: "ChofushiSengawa_reiji_senkotsu_unknown", file: "audio/ChofushiSengawa_reiji_senkotsu.mp3" },
   { id: "Nerimaku_kuko_zentoukotsu_20250202", file: "audio/Nerimaku_kuko_zentoukotsu_20250202.mp3" },
   { id: "Shimokyoku_Tachibana_sekitsuikotsu_20250201 ", file: "audio/shimokyoku_Tachibana_sekitsuikotsu_20250201 .mp3" },
@@ -38,7 +40,54 @@ let playingAudios = [];
 let playbackTimer = null;
 
 let uiLocked = false;
-let readyToPlay = false;
+
+// --- Recording ---
+let micStream = null;
+let mediaRecorder = null;
+let recordedChunks = [];
+let recordedBlob = null;
+let recordedMime = "";
+let recordedExt = "webm"; // default
+
+// 5min fixed
+const FIXED_MS = 10000; // 10秒
+
+/* =========================
+   DOM HELPERS
+========================= */
+
+function $(id) {
+  return document.getElementById(id);
+}
+
+function lockUIWithOverlay(message, sub = "") {
+  uiLocked = true;
+  const overlay = $("loading-overlay");
+  const loadingText = $("loading-text");
+  const progressText = $("loading-progress");
+  const overlayPlayBtn = $("overlay-play-button");
+
+  overlay.classList.remove("hidden");
+  overlayPlayBtn.classList.add("hidden");
+
+  loadingText.textContent = message;
+  progressText.textContent = sub;
+}
+
+function unlockOverlayOnly() {
+  const overlay = $("loading-overlay");
+  overlay.classList.add("hidden");
+}
+
+function sanitizeFilenamePart(s) {
+  // アルファベット/数字/アンダースコア/ハイフンに寄せる（展示で事故りにくい）
+  return String(s || "")
+    .trim()
+    .replace(/\s+/g, "_")
+    .replace(/[^A-Za-z0-9_\-]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
 
 /* =========================
    BOOTSTRAP
@@ -46,24 +95,18 @@ let readyToPlay = false;
 
 document.addEventListener("DOMContentLoaded", () => {
 
-  /* =========================
-     ① 骨クリック登録
-  ========================= */
+  /* ① 骨クリック登録 */
   document.querySelectorAll(".bone").forEach(bone => {
     bone.addEventListener("click", () => {
       if (uiLocked) return;
-      if (bone.id === "bone-8") return;
-
+      if (bone.id === "bone-8") return; // head is locked
       selectedBone = bone.id;
       openAudioPanel();
     });
   });
 
-  /* =========================
-     ② 下部の再生ボタン → ローディング開始
-        （※ 最終再生ではない）
-  ========================= */
-  const playBtn = document.getElementById("play-button");
+  /* ② 下部の再生ボタン → ローディング開始 */
+  const playBtn = $("play-button");
   if (playBtn) {
     playBtn.addEventListener("click", () => {
       if (uiLocked) return;
@@ -71,35 +114,45 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  /* =========================
-     ③ overlay 内の最終再生ボタン
-        （ここが「決断の一押し」）
-  ========================= */
-  const overlayPlayBtn = document.getElementById("overlay-play-button");
+  /* ③ overlay 内の最終再生/録音ボタン（ユーザークリックが必須） */
+  const overlayPlayBtn = $("overlay-play-button");
   if (overlayPlayBtn) {
-    overlayPlayBtn.addEventListener("click", () => {
+    overlayPlayBtn.addEventListener("click", async () => {
+      if (uiLocked) return;
 
-      // overlay を消す
-      const overlay = document.getElementById("loading-overlay");
-      if (overlay) overlay.classList.add("hidden");
+      const ok = window.confirm(
+        `再生と同時に録音が始まります。
+声を通す準備は本当によろしいですか？
+よろしければ再生/録音ボタンを押してください。
 
-      // ★ 元画面の再生ボタンを完全に消す
-      if (playBtn) {
-        playBtn.classList.add("hidden");
-        playBtn.disabled = true;
+Recording will start at the same time as playback.
+Are you sure you are ready to let your voice pass through?
+If you are ready, please press the Play / Record button.`
+      );
+      if (!ok) return;
+
+      // ここから「ユーザージェスチャ内」で開始するのがSafari的に重要
+      try {
+        await startPlaybackAndRecording(); // ← 全部ここで開始
+      } catch (err) {
+        console.error(err);
+        uiLocked = false;
+        lockUIWithOverlay(
+          "録音を開始できませんでした。",
+          "マイク許可 / ブラウザ対応を確認してください。"
+        );
       }
-
-      // 実際の再生開始
-      playingAudios.forEach(a => {
-        a.currentTime = 0;
-        a.play().catch(() => {});
-      });
-
-      // UIロック（再生中）
-      uiLocked = true;
     });
   }
 
+  /* アップロードボタン */
+  const uploadBtn = $("upload-button");
+  if (uploadBtn) {
+    uploadBtn.addEventListener("click", () => {
+      if (uiLocked) return;
+      uploadRecordingWithMeta();
+    });
+  }
 });
 
 /* =========================
@@ -107,11 +160,11 @@ document.addEventListener("DOMContentLoaded", () => {
 ========================= */
 
 function openAudioPanel() {
-  const panel = document.getElementById("audio-panel");
-  const list = document.getElementById("audio-list");
-  const title = document.getElementById("audio-panel-title");
+  const panel = $("audio-panel");
+  const list = $("audio-list");
+  const title = $("audio-panel-title");
 
-  title.textContent = `SELECT AUDIO (${selectedBone})`;
+  title.textContent = `SELECT AUDIO --- (10 sec preview) (${selectedBone})`;
   list.innerHTML = "";
 
   audioBank.forEach(audio => {
@@ -144,13 +197,13 @@ function openAudioPanel() {
 }
 
 function closeAudioPanel() {
-  document.getElementById("audio-panel").classList.add("hidden");
+  $("audio-panel").classList.add("hidden");
   selectedBone = null;
 }
 
 // パネル外クリックで閉じる
 document.addEventListener("click", (e) => {
-  const panel = document.getElementById("audio-panel");
+  const panel = $("audio-panel");
   if (panel.classList.contains("hidden")) return;
   if (panel.contains(e.target)) return;
   if (e.target.closest(".bone")) return;
@@ -163,11 +216,9 @@ document.addEventListener("click", (e) => {
 
 function playPreview(audio) {
   stopPreview();
-
   previewAudio = new Audio(audio.file);
   previewAudio.currentTime = 0;
   previewAudio.play().catch(() => {});
-
   previewTimer = setTimeout(stopPreview, 10000);
 }
 
@@ -191,7 +242,7 @@ function assignAudioToBone(boneId, audio) {
   if (!boneId) return;
 
   boneAssignments[boneId] = audio;
-  document.getElementById(boneId).classList.add("assigned");
+  $(boneId).classList.add("assigned");
 
   updateProgress();
   checkPlaybackReady();
@@ -206,8 +257,8 @@ function updateProgress() {
   const assigned = Object.values(boneAssignments).filter(Boolean).length;
   const percent = Math.round((assigned / 7) * 100);
 
-  const bar = document.getElementById("progress-bar");
-  const text = document.getElementById("progress-text");
+  const bar = $("progress-bar");
+  const text = $("progress-text");
 
   bar.style.width = `${percent}%`;
   text.textContent = `${assigned} / 7 (${percent}%)`;
@@ -215,7 +266,7 @@ function updateProgress() {
 
 function checkPlaybackReady() {
   if (Object.values(boneAssignments).every(Boolean)) {
-    const playBtn = document.getElementById("play-button");
+    const playBtn = $("play-button");
     playBtn.classList.remove("hidden");
     playBtn.textContent = "▶ 再生を開始";
   }
@@ -228,10 +279,10 @@ function checkPlaybackReady() {
 function startLoadingPhase() {
   uiLocked = true;
 
-  const overlay = document.getElementById("loading-overlay");
-  const loadingText = document.getElementById("loading-text");
-  const progressText = document.getElementById("loading-progress");
-  const overlayPlayBtn = document.getElementById("overlay-play-button");
+  const overlay = $("loading-overlay");
+  const loadingText = $("loading-text");
+  const progressText = $("loading-progress");
+  const overlayPlayBtn = $("overlay-play-button");
 
   overlay.classList.remove("hidden");
   overlayPlayBtn.classList.add("hidden");
@@ -252,10 +303,9 @@ function startLoadingPhase() {
       progressText.textContent = `${loaded} / ${total}`;
 
       if (loaded === total) {
-        // ★ 準備完了状態
-        loadingText.textContent = "準備完了：再生をタップしてください";
+        loadingText.textContent = "準備完了：再生/録音を開始します";
         overlayPlayBtn.classList.remove("hidden");
-        uiLocked = false;
+        uiLocked = false; // ボタン押せるように戻す
       }
     }, { once: true });
 
@@ -264,55 +314,234 @@ function startLoadingPhase() {
 }
 
 /* =========================
-   ACTUAL PLAYBACK
+   SAFARI-AWARE: PICK MIME
 ========================= */
 
-function startActualPlayback() {
-  if (!readyToPlay) return;
+function chooseRecordingMime() {
+  // できるだけ互換性の高い順に選ぶ
+  const candidates = [
+    // Safariがmp4/aacを持っているケース（WebKitブログにも言及あり） :contentReference[oaicite:2]{index=2}
+    "audio/mp4;codecs=mp4a.40.2",
+    "audio/mp4",
 
-  readyToPlay = false;
-  uiLocked = true;
+    // Safari 18.4 以降でWebMが通るケース :contentReference[oaicite:3]{index=3}
+    "audio/webm;codecs=opus",
+    "audio/webm",
 
-  document.getElementById("loading-overlay").classList.add("hidden");
-  document.getElementById("overlay-play-button").classList.add("hidden");
+    // 最後の保険
+    ""
+  ];
 
-  playingAudios.forEach(a => {
-    a.currentTime = 0;
-    a.play().catch(() => {});
-  });
+  for (const mt of candidates) {
+    if (!mt) break;
+    if (window.MediaRecorder && MediaRecorder.isTypeSupported(mt)) {
+      recordedMime = mt;
+      if (mt.includes("mp4")) {
+        recordedExt = "m4a"; // 実際にはmp4コンテナ、音だけならm4a扱いが自然
+      } else if (mt.includes("webm")) {
+        recordedExt = "webm";
+      } else {
+        recordedExt = "dat";
+      }
+      return;
+    }
+  }
 
-  playbackTimer = setTimeout(stopPlayback, 300000);
+  recordedMime = "";
+  recordedExt = "webm";
 }
 
 /* =========================
-   STOP
+   PLAYBACK + RECORDING (single user gesture)
 ========================= */
 
-function stopPlayback() {
+async function startPlaybackAndRecording() {
+  // ここから先は「ユーザークリック」内で呼ばれている想定（Safari対策）
+
+  // 元画面再生ボタンを殺す
+  const playBtn = $("play-button");
+  if (playBtn) {
+    playBtn.classList.add("hidden");
+    playBtn.disabled = true;
+  }
+
+  // UI完全ロック（録音中表示で覆う）
+  lockUIWithOverlay("録音中です（10秒間）", "ページを閉じないでください");
+
+  // 1) 録音開始（許可ダイアログもここで出る）
+  await startRecording();
+
+  // 2) 再生開始（同じジェスチャ内で呼ぶのが重要）
+  playingAudios.forEach(a => {
+    a.currentTime = 0;
+    a.play().catch((e) => console.warn("play() failed:", e));
+  });
+
+  // 3) 5分後に停止（停止操作は提供しない）
+  if (playbackTimer) clearTimeout(playbackTimer);
+  playbackTimer = setTimeout(stopPlaybackAndRecording, FIXED_MS);
+}
+
+async function startRecording() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    throw new Error("getUserMedia not supported");
+  }
+  if (!window.MediaRecorder) {
+    throw new Error("MediaRecorder not supported");
+  }
+
+  chooseRecordingMime();
+
+  // iOS Safariで“マイク開始で出力ルーティングが変わる”系の癖があるので、
+  // まず素直にストリーム取得（必要なら後でAudioSession系を追加）
+  micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+  recordedChunks = [];
+  recordedBlob = null;
+
+  const options = recordedMime ? { mimeType: recordedMime } : undefined;
+  mediaRecorder = new MediaRecorder(micStream, options);
+
+  mediaRecorder.addEventListener("dataavailable", (e) => {
+    if (e.data && e.data.size > 0) recordedChunks.push(e.data);
+  });
+
+  mediaRecorder.addEventListener("stop", () => {
+    // Blob化
+    const type = recordedMime || "audio/webm";
+    recordedBlob = new Blob(recordedChunks, { type });
+
+  // ★ この1行だけ追加
+  saveBlobLocally(recordedBlob, recordedExt);
+
+    // マイク停止（LED/許可表示を消す）
+    try {
+      micStream?.getTracks()?.forEach(t => t.stop());
+    } catch (_) {}
+
+    // 収録後フォームへ
+    showMetaForm();
+  });
+
+  // timesliceを指定するとデータが分割で来て扱いやすいことがある
+  // （ただし挙動がブラウザ差あるので最小）
+  mediaRecorder.start();
+}
+
+function stopPlaybackAndRecording() {
   if (playbackTimer) clearTimeout(playbackTimer);
 
+  // 再生停止
   playingAudios.forEach(a => {
     a.pause();
     a.currentTime = 0;
   });
 
-  uiLocked = false;
+  // 録音停止 → onstopでフォーム表示へ
+  if (mediaRecorder && mediaRecorder.state !== "inactive") {
+    mediaRecorder.stop();
+  } else {
+    // 何らかでrecorderが無い場合でもUI復帰
+    showMetaForm();
+  }
 }
 
+/* =========================
+   META FORM
+========================= */
 
+function showMetaForm() {
+  uiLocked = false;
+  unlockOverlayOnly();
 
+  const meta = $("record-meta");
+  if (meta) meta.classList.remove("hidden");
+}
+
+/* =========================
+   UPLOAD (with progress)
+========================= */
+
+function uploadRecordingWithMeta() {
+  if (!recordedBlob) {
+    alert("録音データが見つかりません。");
+    return;
+  }
+
+  const name = sanitizeFilenamePart($("meta-name")?.value);
+  const location = sanitizeFilenamePart($("meta-location")?.value);
+  const bone = sanitizeFilenamePart($("meta-bone")?.value);
+
+  if (!name || !location || !bone) {
+    alert("name / location / bone name をすべて入力してください。");
+    return;
+  }
+
+  const filename = `${name}_${location}_${bone}.${recordedExt}`;
+
+  // UI: アップロード中
+  uiLocked = true;
+
+  const status = $("upload-status");
+  if (status) status.textContent = "アップロード中です。ページを閉じないでください。";
+
+  const bar = $("upload-bar");
+  if (bar) bar.style.width = "0%";
+
+  // XHRでアップロード進捗（fetchだと進捗が取りにくい）
+  const xhr = new XMLHttpRequest();
+
+  // ★ここがサーバー側エンドポイント
+  // 自前サーバーなら /upload を用意
+  xhr.open("POST", "/upload", true);
+
+  xhr.upload.onprogress = (e) => {
+    if (!e.lengthComputable) return;
+    const pct = Math.round((e.loaded / e.total) * 100);
+    if (bar) bar.style.width = `${pct}%`;
+  };
+
+  xhr.onload = () => {
+    uiLocked = false;
+    if (xhr.status >= 200 && xhr.status < 300) {
+      if (status) status.textContent = "アップロード完了";
+      // 完了後遷移（まだ作らないなら仮でOK）
+      window.location.href = "/complete.html";
+    } else {
+      console.error(xhr.responseText);
+      if (status) status.textContent = "アップロードに失敗しました。";
+      alert("アップロードに失敗しました。サーバー側を確認してください。");
+    }
+  };
+
+  xhr.onerror = () => {
+    uiLocked = false;
+    if (status) status.textContent = "アップロードに失敗しました。";
+    alert("ネットワークエラーでアップロードに失敗しました。");
+  };
+
+  const formData = new FormData();
+  formData.append("file", recordedBlob, filename);
+  formData.append("name", name);
+  formData.append("location", location);
+  formData.append("bone", bone);
+
+  xhr.send(formData);
+}
+
+/* =========================
+   DRAGGABLE AUDIO PANEL (original)
+========================= */
 
 (function enableAudioPanelDrag() {
-  const panel = document.getElementById("audio-panel");
+  const panel = $("audio-panel");
   if (!panel) return;
 
   let isDragging = false;
   let startX, startY, startLeft, startTop;
 
   panel.addEventListener("mousedown", (e) => {
-    // ボタン押下は無視（誤操作防止）
     if (e.target.tagName === "BUTTON") return;
-
     isDragging = true;
     startX = e.clientX;
     startY = e.clientY;
@@ -344,3 +573,33 @@ function stopPlayback() {
     panel.style.cursor = "default";
   });
 })();
+
+
+
+
+
+
+function saveBlobLocally(blob, ext) {
+  const d = new Date();
+  const ts =
+    d.getFullYear() +
+    String(d.getMonth() + 1).padStart(2, "0") +
+    String(d.getDate()).padStart(2, "0") + "_" +
+    String(d.getHours()).padStart(2, "0") +
+    String(d.getMinutes()).padStart(2, "0") +
+    String(d.getSeconds()).padStart(2, "0");
+
+  const filename = `recording_test_${ts}.${ext}`;
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+    a.remove();
+  }, 100);
+}
