@@ -190,7 +190,8 @@ svg.bone.head {
 
   width: 320px;
   max-height: 65vh;          /* ← 画面の6割まで */
-  overflow: hidden;          /* 外ははみ出さない */
+  overflow-y: auto;              /* ← 追加 */
+  -webkit-overflow-scrolling: touch;        /* 外ははみ出さない */
 
   background: rgba(0,0,0,0.85);
   color: white;
