@@ -124,12 +124,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const ok = window.confirm(
         `再生と同時に録音が始まります。
-声を通す準備は本当によろしいですか？
-よろしければ再生/録音ボタンを押してください。
+        音声は必ずイヤフォンまたはヘッドフォンで聴いてください。
+        できるだけ大きなボリュームで聴くようにしてください。
+        声を通す準備は本当によろしいですか？
+        準備が完了したら再生/録音ボタンを押してください。
 
-Recording will start at the same time as playback.
-Are you sure you are ready to let your voice pass through?
-If you are ready, please press the Play / Record button.`
+        Recording will begin simultaneously with playback.
+        Please listen to the audio using earphones or headphones.
+        Please listen at the highest volume possible.
+        Are you absolutely ready to speak?
+        Once you are ready, press the Play/Record button.`
       );
       if (!ok) return;
 
