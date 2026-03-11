@@ -21,6 +21,7 @@ body {
   font-family: sans-serif;
   background: #ffffff;
   color: #000;
+    -webkit-text-size-adjust:100%;
 }
 
 h1 {
@@ -447,6 +448,8 @@ overflow:visible;
   justify-content:center;
   align-items:center;
 
+  overflow-y:auto;   /* ←これ追加 */
+
   z-index:9999;
 }
 
@@ -487,6 +490,8 @@ overflow:visible;
     transform: scale(0.16);
   }
 }
+
+
 
 /*
 svg.bone {
