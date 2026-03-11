@@ -835,3 +835,97 @@ function startHeadEmergence() {
   head.style.opacity = 1;
 
 }
+
+
+
+
+const introMessage =
+`このインターフェースはユーザーの身体を用いて声を通過・録音・収集するための儀礼装置です。
+表示される７つの骨の部位をクリックし、オーディオパネルから任意のファイルをアサインしてください。
+各オーディオファイルは10秒間のプレビューが可能です。
+全部位にオーディオアサインが完了しましたら、録音と再生が同時に開始できるようになります。
+録音と再生は5分間です。
+なお、一度録音・アップロードされた音源および情報は自動的に声原生成のための素材として収集され、二次使用されます。
+また、録音された音源をユーザーが後から確認することはできません。以上に承諾された場合のみ、インターフェースにお入りください。
+
+This interface is a ritual device 
+that uses the user's body to transmit, record, 
+and collect sound. Click on one of the seven bone locations displayed 
+and assign any file from the audio panel. 
+Each audio file offers a 30-second preview. 
+Once audio assignment is complete for all locations, 
+recording and playback will begin simultaneously.
+Recording and playback last for 5 minutes. 
+Please note: Once recorded and uploaded, 
+audio sources and associated information are automatically collected 
+as material for voice synthesis and may be reused. 
+Furthermore, users cannot review recorded audio sources afterward. 
+Only proceed to the interface if you agree to these terms.
+`;
+
+const introText = document.getElementById("introText");
+const enterButton = document.getElementById("enterButton");
+const introModal = document.getElementById("introModal");
+const agreement = document.getElementById("agreement");
+const agreeCheck = document.getElementById("agreeCheck");
+
+let i = 0;
+
+let typingFinished = false;
+
+
+function typeWriter(){
+
+  if(typingFinished){
+    introText.textContent = introMessage;
+    agreement.style.display = "block";
+    return;
+  }
+
+  if(i < introMessage.length){
+
+    introText.textContent += introMessage.charAt(i);
+    i++;
+
+    setTimeout(typeWriter, 35);
+
+  } else {
+
+    agreement.style.display = "block";
+
+  }
+
+}
+
+document.addEventListener("DOMContentLoaded", function(){
+
+  typeWriter();
+
+  agreeCheck.addEventListener("change", function(){
+
+    if(this.checked){
+      enterButton.style.display = "inline-block";
+    } else {
+      enterButton.style.display = "none";
+    }
+
+  });
+
+  enterButton.onclick = function(){
+    introModal.style.display = "none";
+  };
+
+});
+
+document.addEventListener("click", function(){
+
+  if(!typingFinished){
+
+    typingFinished = true;
+    introText.textContent = introMessage;
+    agreement.style.display = "block";
+
+  }
+
+});
+
