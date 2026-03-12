@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
+
 <head>
 
 <meta charset="UTF-8">
@@ -17,11 +18,59 @@ align-items:center;
 justify-content:center;
 height:100vh;
 overflow:hidden;
+
+
+
 }
 
-img{
+#final-screen{
+position:relative;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+
+#final-image{
 max-width:60vw;
 max-height:60vh;
+display:block;
+}
+
+#final-message{
+
+position:absolute;
+
+top:10%;
+left:50%;
+
+transform:translate(-50%,-50%);
+
+font-size:clamp(20px,4vw,20px);
+
+color:white;
+
+letter-spacing:0.06em;
+
+text-align:center;
+
+text-shadow:0 0 20px rgba(0,0,0,0.8);
+
+opacity:0;
+
+animation:fadeIn 0s ease forwards;
+
+}
+
+@keyframes fadeIn{
+
+from{
+opacity:0;
+}
+
+to{
+opacity:1;
+}
+
 }
 
 </style>
@@ -30,7 +79,17 @@ max-height:60vh;
 
 <body>
 
-<img src="final-image.png">
+<div id="final-screen">
+
+<img src="final-image.png" id="final-image">
+
+<div id="final-message">
+声は声原の生成に合流しました。<br>
+ご参加ありがとうございました。
+</div>
+
+</div>
 
 </body>
+
 </html>
