@@ -24,7 +24,7 @@ body {
 
   -webkit-text-size-adjust:100%;
   overflow-y:auto;
-  padding-bottom:80px;
+  padding-bottom: calc(100px + env(safe-area-inset-bottom));
   min-height:100dvh;
 }
 
