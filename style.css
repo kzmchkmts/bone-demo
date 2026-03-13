@@ -552,6 +552,10 @@ overflow:visible;
 #introText{
   white-space:pre-wrap;
   text-align:left;
+  line-height:1.4;
+  letter-spacing:0.02em;
+  font-family: Georgia, 'Times New Roman', Times, serif;
+  font-size: small;
 }
 
 #agreement{
