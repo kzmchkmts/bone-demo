@@ -4,13 +4,13 @@
 
 const audioBank = [
   { id: "AomorikenHirakawashi_Senkotsu_202556", file: "audio/AomorikenHirakawashi_Senkotsu_202556.mp3" },
-  { id: "AomorikenHirakawashi_Senkotsu_202556", file: "audio/AomorikenHirakawashi_Senkotsu_202556.mp3" },
   { id: "OsakaNakatsu_weather_zekkotsu_20250427", file: "audio/OsakaNakatsu_weather_zekkotsu_20250427.mp3" },
   { id: "ChofushiSengawa_reiji_senkotsu_unknown", file: "audio/ChofushiSengawa_reiji_senkotsu.mp3" },
   { id: "Nerimaku_kuko_zentoukotsu_20250202", file: "audio/Nerimaku_kuko_zentoukotsu_20250202.mp3" },
-  { id: "Shimokyoku_Tachibana_sekitsuikotsu_20250201", file: "audio/shimokyoku_Tachibana_sekitsuikotsu_20250201.mp3" },
-  { id: "Shizuokakengotenbashi_hozuku_hidarikoyubi_20250131", file: "audio/Shizuokakengotenbashi_hozuku_hidarikoyubi_20250131.mp3" },
-  { id: "TokyoKitakuAkabanekita_Nozomu_Rokkotu_20250427", file: "audio/TokyoKitakuAkabanekita_Nozomu_Rokkotu_20250427.mp3" }
+  { id: "TokyoKitakuAkabanekita_Nozomu_Rokkotu_20250427", file: "audio/TokyoKitakuAkabanekita_Nozomu_Rokkotu_20250427.mp3" },
+  { id: "Tokyoshibuyaku_soulmatter_hidarikata_20250123", file: "audio/Tokyoshibuyaku_soulmatter_hidarikata_20250123.mp3" },
+  { id: "TokyoSendagi_idoi_migikenkoukotsu_20250427", file: "audio/TokyoSendagi_idoi_migikenkoukotsu_20250427.mp3" },
+  { id: "Tetsutaro_Sakaishi_migikata_20260313-004038", file: "audio/Tetsutaro_Sakaishi_migikata_20260313-004038.mp3" }
 ];
 
 /* =========================
