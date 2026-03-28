@@ -149,7 +149,7 @@ position: absolute;
 #bone-8{
   opacity: 0;
   position: absolute;
-  left: 36%;
+  left: 38%;
   bottom: 2670px;
   transform: translateX(0px);
   width: 250px;
@@ -667,6 +667,28 @@ overflow:visible;
   }
 
 }
+
+
+
+
+
+
+#waveform-wrap{
+  margin: 0 0 24px 0;
+  width: 100%;
+  max-width: 900px;
+}
+
+#waveform-canvas{
+  display:block;
+  width:100%;
+  height:140px;
+  background:#efefef;
+  border:1px solid #ccc;
+}
+
+
+
 
 
 
