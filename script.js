@@ -10,6 +10,7 @@ const audioBank = [
   { id: "TokyoKitakuAkabanekita_Nozomu_Rokkotu_20250427", file: "audio/TokyoKitakuAkabanekita_Nozomu_Rokkotu_20250427.mp3" },
   { id: "Tokyoshibuyaku_soulmatter_hidarikata_20250123", file: "audio/Tokyoshibuyaku_soulmatter_hidarikata_20250123.mp3" },
   { id: "TokyoSendagi_idoi_migikenkoukotsu_20250427", file: "audio/TokyoSendagi_idoi_migikenkoukotsu_20250427.mp3" },
+  { id: "PU_kyotanabe_sakotsu_20260312-000838", file: "audio/PU_kyotanabe_sakotsu_20260312-000838.m4a" },
   { id: "Tetsutaro_Sakaishi_migikata_20260313-004038", file: "audio/Tetsutaro_Sakaishi_migikata_20260313-004038.mp3" }
 ];
 
@@ -655,12 +656,20 @@ function breakBonePieces(volume){
    META FORM
 ========================= */
 
-function showMetaForm() {
+async function showMetaForm() {
   uiLocked = false;
   unlockOverlayOnly();
 
   const meta = $("record-meta");
   if (meta) meta.classList.remove("hidden");
+
+  if (recordedBlob) {
+    try {
+      await drawRecordedWaveform(recordedBlob);
+    } catch (err) {
+      console.error("waveform draw failed:", err);
+    }
+  }
 }
 
 /* =========================
@@ -1034,3 +1043,72 @@ document.getElementById("meta-bone").value = boneName;
 
 
 
+
+
+async function drawRecordedWaveform(blob) {
+  const canvas = $("waveform-canvas");
+  if (!canvas || !blob) return;
+
+  const ctx = canvas.getContext("2d");
+  const width = canvas.width;
+  const height = canvas.height;
+
+  ctx.clearRect(0, 0, width, height);
+
+  const arrayBuffer = await blob.arrayBuffer();
+
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+  const rawData = audioBuffer.getChannelData(0); // 左chだけ使う
+  const samples = width; // 横幅ぶんに圧縮
+  const blockSize = Math.floor(rawData.length / samples);
+  const filteredData = [];
+
+  for (let i = 0; i < samples; i++) {
+    let sum = 0;
+    const start = i * blockSize;
+    const end = start + blockSize;
+
+    for (let j = start; j < end; j++) {
+      sum += Math.abs(rawData[j]);
+    }
+
+    filteredData.push(sum / blockSize);
+  }
+
+  const max = Math.max(...filteredData, 0.0001);
+  const normalized = filteredData.map(v => v / max);
+
+  // 背景
+  ctx.fillStyle = "#efefef";
+  ctx.fillRect(0, 0, width, height);
+
+  // 中央線
+  ctx.strokeStyle = "#c8c8c8";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, height / 2);
+  ctx.lineTo(width, height / 2);
+  ctx.stroke();
+
+  // 波形
+  ctx.strokeStyle = "#111";
+  ctx.lineWidth = 1;
+
+  for (let i = 0; i < normalized.length; i++) {
+    const x = i;
+    const v = normalized[i] * (height * 0.42);
+    const yTop = (height / 2) - v;
+    const yBottom = (height / 2) + v;
+
+    ctx.beginPath();
+    ctx.moveTo(x, yTop);
+    ctx.lineTo(x, yBottom);
+    ctx.stroke();
+  }
+
+  try {
+    await audioCtx.close();
+  } catch (_) {}
+}
