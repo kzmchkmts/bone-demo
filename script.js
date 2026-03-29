@@ -10,7 +10,6 @@ const audioBank = [
   { id: "TokyoKitakuAkabanekita_Nozomu_Rokkotu_20250427", file: "audio/TokyoKitakuAkabanekita_Nozomu_Rokkotu_20250427.mp3" },
   { id: "Tokyoshibuyaku_soulmatter_hidarikata_20250123", file: "audio/Tokyoshibuyaku_soulmatter_hidarikata_20250123.mp3" },
   { id: "TokyoSendagi_idoi_migikenkoukotsu_20250427", file: "audio/TokyoSendagi_idoi_migikenkoukotsu_20250427.mp3" },
-  { id: "PU_kyotanabe_sakotsu_20260312-000838", file: "audio/PU_kyotanabe_sakotsu_20260312-000838.m4a" },
   { id: "Tetsutaro_Sakaishi_migikata_20260313-004038", file: "audio/Tetsutaro_Sakaishi_migikata_20260313-004038.mp3" }
 ];
 
