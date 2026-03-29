@@ -433,13 +433,28 @@ margin-bottom:12px;
 
 
 
-
 #record-meta {
   position: fixed;
   inset: 0;
   background: #fff;
   z-index: 10000;
-  padding: 40px;
+
+  display: none; /* hiddenクラスではなく基本非表示でもOK。今の運用に合わせるなら省略可 */
+
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+
+  padding:
+    24px
+    20px
+    calc(140px + env(safe-area-inset-bottom))
+    20px;
+
+  box-sizing: border-box;
+}
+
+#record-meta:not(.hidden){
+  display: block;
 }
 
 #record-meta.hidden {
@@ -448,7 +463,15 @@ margin-bottom:12px;
 
 #record-meta label {
   display: block;
-  margin-bottom: 12px;
+  margin-bottom: 18px;
+}
+
+#record-meta input {
+  width: 100%;
+  max-width: 420px;
+  padding: 8px;
+  font-size: 16px; /* iPhoneの勝手ズーム回避 */
+  box-sizing: border-box;
 }
 
 #upload-bar-bg {
@@ -456,6 +479,17 @@ margin-bottom:12px;
   height: 10px;
   background: #ddd;
   margin-top: 12px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 700px){
+  #record-meta{
+    padding:
+      20px
+      16px
+      calc(180px + env(safe-area-inset-bottom))
+      16px;
+  }
 }
 
 #upload-bar {
