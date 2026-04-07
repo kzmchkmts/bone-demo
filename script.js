@@ -10,8 +10,10 @@ const audioBank = [
   { id: "TokyoKitakuAkabanekita_Nozomu_Rokkotu_20250427", file: "audio/TokyoKitakuAkabanekita_Nozomu_Rokkotu_20250427.mp3" },
   { id: "Tokyoshibuyaku_soulmatter_hidarikata_20250123", file: "audio/Tokyoshibuyaku_soulmatter_hidarikata_20250123.mp3" },
   { id: "TokyoSendagi_idoi_migikenkoukotsu_20250427", file: "audio/TokyoSendagi_idoi_migikenkoukotsu_20250427.mp3" },
-  { id: "Tetsutaro_Sakaishi_migikata_20260313-004038", file: "audio/Tetsutaro_Sakaishi_migikata_20260313-004038.mp3" }
+  { id: "testaro_nishigyoku_migikata_20260313", file: "audio/testaro_nishigyoku_migikata_20260313-004038.mp3"},
+  { id: "falco_nagano_hiji_20260315", file: "audio/falco_nagano_hiji_20260315-163244.mp3"}
 ];
+
 
 /* =========================
    ASSIGNMENT STATE
