@@ -46,6 +46,8 @@ let uiLocked = false;
 
 let glitchStep = 0;
 
+let currentPhase = "idle"; // idle | loaded | practice | choice | playbackOnly | recording
+
 // --- Recording ---
 let micStream = null;
 let mediaRecorder = null;
@@ -67,13 +69,20 @@ function $(id) {
 
 function lockUIWithOverlay(message, sub = "") {
   uiLocked = true;
+
   const overlay = $("loading-overlay");
   const loadingText = $("loading-text");
   const progressText = $("loading-progress");
+
   const overlayPlayBtn = $("overlay-play-button");
+  const practiceBtn = $("overlay-practice-button");
+  const playOnlyBtn = $("overlay-playonly-button");
 
   overlay.classList.remove("hidden");
-  overlayPlayBtn.classList.add("hidden");
+
+  if (overlayPlayBtn) overlayPlayBtn.classList.add("hidden");
+  if (practiceBtn) practiceBtn.classList.add("hidden");
+  if (playOnlyBtn) playOnlyBtn.classList.add("hidden");
 
   loadingText.textContent = message;
   progressText.textContent = sub;
@@ -118,6 +127,60 @@ document.addEventListener("DOMContentLoaded", () => {
       startLoadingPhase();
     });
   }
+
+
+
+ const practiceBtn = $("overlay-practice-button");
+  if (practiceBtn) {
+    practiceBtn.addEventListener("click", async () => {
+      if (uiLocked) return;
+
+      const ok = window.confirm(
+        `まずは5分間、練習として音を聴きます。
+この段階では録音されません。
+よろしければ開始してください。`
+      );
+      if (!ok) return;
+
+      try {
+        await startPracticePlayback();
+      } catch (err) {
+        console.error(err);
+        uiLocked = false;
+        lockUIWithOverlay(
+          "練習再生を開始できませんでした。",
+          "もう一度お試しください。"
+        );
+      }
+    });
+  }
+
+  const playOnlyBtn = $("overlay-playonly-button");
+  if (playOnlyBtn) {
+    playOnlyBtn.addEventListener("click", async () => {
+      if (uiLocked) return;
+
+      const ok = window.confirm(
+        `5分間、再生のみを行います。
+この段階では録音されません。`
+      );
+      if (!ok) return;
+
+      try {
+        await startPlaybackOnly();
+      } catch (err) {
+        console.error(err);
+        uiLocked = false;
+        lockUIWithOverlay(
+          "再生を開始できませんでした。",
+          "もう一度お試しください。"
+        );
+      }
+    });
+  }
+
+
+
 
   /* ③ overlay 内の最終再生/録音ボタン（ユーザークリックが必須） */
   const overlayPlayBtn = $("overlay-play-button");
@@ -294,18 +357,17 @@ function preloadSingleAssignedAudio(audio, index, total, progressText) {
   return new Promise((resolve, reject) => {
     const a = new Audio();
     a.preload = "auto";
-    a.src = audio.file;
 
     let settled = false;
 
     const cleanup = () => {
-      a.removeEventListener("loadeddata", onReady);
-      a.removeEventListener("canplay", onReady);
-      a.removeEventListener("canplaythrough", onReady);
-      a.removeEventListener("error", onError);
+      clearTimeout(timer);
+      a.onloadeddata = null;
+      a.oncanplay = null;
+      a.onerror = null;
     };
 
-    const onReady = () => {
+    const success = () => {
       if (settled) return;
       settled = true;
       cleanup();
@@ -313,78 +375,42 @@ function preloadSingleAssignedAudio(audio, index, total, progressText) {
       resolve(a);
     };
 
-    const onError = (e) => {
+    const fail = () => {
       if (settled) return;
       settled = true;
       cleanup();
-      reject(new Error(`audio load error: ${audio.file}`));
+      reject(new Error(`audio load failed: ${audio.file}`));
     };
 
     const timer = setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      cleanup();
-      reject(new Error(`audio load timeout: ${audio.file}`));
+      fail();
     }, 20000);
 
-    const wrappedResolve = (audioEl) => {
-      clearTimeout(timer);
-      resolve(audioEl);
-    };
+    a.onloadeddata = success;
+    a.oncanplay = success;
+    a.onerror = fail;
 
-    const wrappedReject = (err) => {
-      clearTimeout(timer);
-      reject(err);
-    };
-
-    const originalOnReady = onReady;
-    const originalOnError = onError;
-
-    const readyHandler = () => {
-      try {
-        originalOnReady();
-        clearTimeout(timer);
-        wrappedResolve(a);
-      } catch (err) {
-        wrappedReject(err);
-      }
-    };
-
-    const errorHandler = (e) => {
-      try {
-        originalOnError(e);
-      } catch (err) {
-        wrappedReject(err);
-      }
-    };
-
-    cleanup();
-
-    a.addEventListener("loadeddata", readyHandler, { once: true });
-    a.addEventListener("canplay", readyHandler, { once: true });
-    a.addEventListener("canplaythrough", readyHandler, { once: true });
-    a.addEventListener("error", errorHandler, { once: true });
-
-    try {
-      a.load(); // ← 明示的に開始
-    } catch (err) {
-      clearTimeout(timer);
-      cleanup();
-      reject(err);
-    }
+    a.src = audio.file;
+    a.load();
   });
 }
 
 async function startLoadingPhase() {
   uiLocked = true;
+  currentPhase = "loading";
 
   const overlay = $("loading-overlay");
   const loadingText = $("loading-text");
   const progressText = $("loading-progress");
   const overlayPlayBtn = $("overlay-play-button");
+  const practiceBtn = $("overlay-practice-button");
+  const playOnlyBtn = $("overlay-playonly-button");
 
   overlay.classList.remove("hidden");
-  overlayPlayBtn.classList.add("hidden");
+
+  if (overlayPlayBtn) overlayPlayBtn.classList.add("hidden");
+  if (practiceBtn) practiceBtn.classList.add("hidden");
+  if (playOnlyBtn) playOnlyBtn.classList.add("hidden");
 
   loadingText.textContent = "音源を読み込んでいます…";
   progressText.textContent = "0 / 7";
@@ -405,20 +431,128 @@ async function startLoadingPhase() {
       playingAudios.push(loadedAudio);
     }
 
-    loadingText.textContent = "準備完了：再生/録音を開始します";
-    overlayPlayBtn.classList.remove("hidden");
-    uiLocked = false; // ボタン押せるように戻す
+    currentPhase = "loaded";
 
-  } catch (err) {
+    loadingText.textContent = "準備完了";
+    progressText.textContent = "まずは5分間、練習として音を聴いてください。";
+
+    if (overlayPlayBtn) overlayPlayBtn.classList.add("hidden");
+    if (playOnlyBtn) playOnlyBtn.classList.add("hidden");
+    if (practiceBtn) practiceBtn.classList.remove("hidden");
+
+    uiLocked = false;
+
+    } catch (err) {
     console.error(err);
 
     loadingText.textContent = "音源の読み込みに失敗しました";
-    progressText.textContent = "通信環境を確認して、もう一度お試しください";
+    progressText.textContent = err?.message || "通信環境を確認して、もう一度お試しください";
 
+    currentPhase = "idle";
     uiLocked = false;
-    overlayPlayBtn.classList.add("hidden");
+
+    if (overlayPlayBtn) overlayPlayBtn.classList.add("hidden");
+    if (practiceBtn) practiceBtn.classList.add("hidden");
+    if (playOnlyBtn) playOnlyBtn.classList.add("hidden");
   }
 }
+
+
+
+function stopAllPlaybackOnly() {
+  if (playbackTimer) {
+    clearTimeout(playbackTimer);
+    playbackTimer = null;
+  }
+
+  playingAudios.forEach(a => {
+    a.pause();
+    a.currentTime = 0;
+  });
+}
+
+function showPostPracticeChoice() {
+  currentPhase = "choice";
+  uiLocked = false;
+
+  const loadingText = $("loading-text");
+  const progressText = $("loading-progress");
+  const practiceBtn = $("overlay-practice-button");
+  const playOnlyBtn = $("overlay-playonly-button");
+  const recordBtn = $("overlay-play-button");
+
+  loadingText.textContent = "練習再生が終了しました";
+  progressText.textContent = "もう一度再生だけ行うか、再生＋録音へ進んでください。";
+
+  if (practiceBtn) practiceBtn.classList.add("hidden");
+  if (playOnlyBtn) playOnlyBtn.classList.remove("hidden");
+  if (recordBtn) recordBtn.classList.remove("hidden");
+}
+
+async function startPracticePlayback() {
+  currentPhase = "practice";
+  uiLocked = true;
+
+  const loadingText = $("loading-text");
+  const progressText = $("loading-progress");
+  const practiceBtn = $("overlay-practice-button");
+  const playOnlyBtn = $("overlay-playonly-button");
+  const recordBtn = $("overlay-play-button");
+
+  if (practiceBtn) practiceBtn.classList.add("hidden");
+  if (playOnlyBtn) playOnlyBtn.classList.add("hidden");
+  if (recordBtn) recordBtn.classList.add("hidden");
+
+  loadingText.textContent = "練習再生中です（5分間）";
+  progressText.textContent = "この段階では録音されません。";
+
+  playingAudios.forEach(a => {
+    a.currentTime = 0;
+    a.play().catch((e) => console.warn("practice play failed:", e));
+  });
+
+  if (playbackTimer) clearTimeout(playbackTimer);
+  playbackTimer = setTimeout(() => {
+    stopAllPlaybackOnly();
+    showPostPracticeChoice();
+  }, FIXED_MS);
+}
+
+async function startPlaybackOnly() {
+  currentPhase = "playbackOnly";
+  uiLocked = true;
+
+  const loadingText = $("loading-text");
+  const progressText = $("loading-progress");
+  const playOnlyBtn = $("overlay-playonly-button");
+  const recordBtn = $("overlay-play-button");
+
+  if (playOnlyBtn) playOnlyBtn.classList.add("hidden");
+  if (recordBtn) recordBtn.classList.add("hidden");
+
+  loadingText.textContent = "再生中です（5分間）";
+  progressText.textContent = "この段階では録音されません。";
+
+  playingAudios.forEach(a => {
+    a.currentTime = 0;
+    a.play().catch((e) => console.warn("playback only failed:", e));
+  });
+
+  if (playbackTimer) clearTimeout(playbackTimer);
+  playbackTimer = setTimeout(() => {
+    stopAllPlaybackOnly();
+    showPostPracticeChoice();
+  }, FIXED_MS);
+}
+
+
+
+
+
+
+
+
+
 
 /* =========================
    SAFARI-AWARE: PICK MIME
