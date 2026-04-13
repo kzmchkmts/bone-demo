@@ -2,6 +2,7 @@
    AUDIO BANK
 ========================= */
 
+
 const audioBank = [
   { id: "AomorikenHirakawashi_Senkotsu_202556", file: "audio/AomorikenHirakawashi_Senkotsu_202556.mp3" },
   { id: "OsakaNakatsu_weather_zekkotsu_20250427", file: "audio/OsakaNakatsu_weather_zekkotsu_20250427.mp3" },
@@ -14,7 +15,6 @@ const audioBank = [
   { id: "MOB_SAKYOKU_MOBBONE_13", file: "audio/MOB_SAKYOKU_MOBBONE_13.mp3"},
   { id: "falco_nagano_hiji_20260315", file: "audio/falco_nagano_hiji_20260315-163244.mp3"}
 ];
-
 
 /* =========================
    ASSIGNMENT STATE
@@ -290,7 +290,92 @@ function checkPlaybackReady() {
    LOADING PHASE
 ========================= */
 
-function startLoadingPhase() {
+function preloadSingleAssignedAudio(audio, index, total, progressText) {
+  return new Promise((resolve, reject) => {
+    const a = new Audio();
+    a.preload = "auto";
+    a.src = audio.file;
+
+    let settled = false;
+
+    const cleanup = () => {
+      a.removeEventListener("loadeddata", onReady);
+      a.removeEventListener("canplay", onReady);
+      a.removeEventListener("canplaythrough", onReady);
+      a.removeEventListener("error", onError);
+    };
+
+    const onReady = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      progressText.textContent = `${index + 1} / ${total}`;
+      resolve(a);
+    };
+
+    const onError = (e) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(new Error(`audio load error: ${audio.file}`));
+    };
+
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(new Error(`audio load timeout: ${audio.file}`));
+    }, 20000);
+
+    const wrappedResolve = (audioEl) => {
+      clearTimeout(timer);
+      resolve(audioEl);
+    };
+
+    const wrappedReject = (err) => {
+      clearTimeout(timer);
+      reject(err);
+    };
+
+    const originalOnReady = onReady;
+    const originalOnError = onError;
+
+    const readyHandler = () => {
+      try {
+        originalOnReady();
+        clearTimeout(timer);
+        wrappedResolve(a);
+      } catch (err) {
+        wrappedReject(err);
+      }
+    };
+
+    const errorHandler = (e) => {
+      try {
+        originalOnError(e);
+      } catch (err) {
+        wrappedReject(err);
+      }
+    };
+
+    cleanup();
+
+    a.addEventListener("loadeddata", readyHandler, { once: true });
+    a.addEventListener("canplay", readyHandler, { once: true });
+    a.addEventListener("canplaythrough", readyHandler, { once: true });
+    a.addEventListener("error", errorHandler, { once: true });
+
+    try {
+      a.load(); // ← 明示的に開始
+    } catch (err) {
+      clearTimeout(timer);
+      cleanup();
+      reject(err);
+    }
+  });
+}
+
+async function startLoadingPhase() {
   uiLocked = true;
 
   const overlay = $("loading-overlay");
@@ -305,26 +390,34 @@ function startLoadingPhase() {
   progressText.textContent = "0 / 7";
 
   playingAudios = [];
-  let loaded = 0;
-  const total = 7;
 
-  Object.values(boneAssignments).forEach(audio => {
-    const a = new Audio(audio.file);
-    a.preload = "auto";
+  const assignedAudios = Object.values(boneAssignments);
+  const total = assignedAudios.length;
 
-    a.addEventListener("canplaythrough", () => {
-      loaded++;
-      progressText.textContent = `${loaded} / ${total}`;
+  try {
+    for (let i = 0; i < total; i++) {
+      const loadedAudio = await preloadSingleAssignedAudio(
+        assignedAudios[i],
+        i,
+        total,
+        progressText
+      );
+      playingAudios.push(loadedAudio);
+    }
 
-      if (loaded === total) {
-        loadingText.textContent = "準備完了：再生/録音を開始します";
-        overlayPlayBtn.classList.remove("hidden");
-        uiLocked = false; // ボタン押せるように戻す
-      }
-    }, { once: true });
+    loadingText.textContent = "準備完了：再生/録音を開始します";
+    overlayPlayBtn.classList.remove("hidden");
+    uiLocked = false; // ボタン押せるように戻す
 
-    playingAudios.push(a);
-  });
+  } catch (err) {
+    console.error(err);
+
+    loadingText.textContent = "音源の読み込みに失敗しました";
+    progressText.textContent = "通信環境を確認して、もう一度お試しください";
+
+    uiLocked = false;
+    overlayPlayBtn.classList.add("hidden");
+  }
 }
 
 /* =========================
