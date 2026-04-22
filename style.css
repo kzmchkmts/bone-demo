@@ -18,15 +18,29 @@ html, body {
 
 body {
   margin: 0;
-  font-family: "Courier New", monospace;
-  background: #ffffff;
+  font-family:
+    "MS PGothic",
+    "Osaka",
+    serif;
+  background: #f3f3f3;
   color: #000;
-
-  -webkit-text-size-adjust:100%;
-  overflow-y:auto;
+  
+  -webkit-text-size-adjust: 100%;
+  overflow-y: auto;
   padding-bottom: calc(140px + env(safe-area-inset-bottom));
-  min-height:100dvh;
+  min-height: 100dvh;
+
+  font-smooth: never;
+  -webkit-font-smoothing: none;
 }
+
+
+
+#loading-text {
+  letter-spacing: 0.15em;
+  text-shadow: 1px 0 red, -1px 0 blue;
+}
+
 
 h1 {
   display: none;
@@ -37,19 +51,21 @@ h1 {
 #machine-title{
 
 position:fixed;
-
+font-weight: bolder;
 top:18px;
 left:20px;
 
-font-family: "Courier New", monospace;
-font-size:20px;
-letter-spacing:0.15em;
+font-family:  "ＭＳ Ｐゴシック";
 
-color:#111;
+font-size:30px;
+    color: rgb(255, 0, 0);
+
 
 user-select:none;
 
 }
+
+
 
 
 
@@ -271,10 +287,6 @@ cursor:pointer;
 }
 
 
-
-
-
-
 #audio-panel {
   position: fixed;
   right: 20px;
@@ -286,8 +298,8 @@ cursor:pointer;
   -webkit-overflow-scrolling: touch;        /* 外ははみ出さない */
 
   backdrop-filter: blur(6px);
-  background: rgba(0,0,0,0.65);
-  color: white;
+  background: rgba(255,255,255,0.85);
+  color: rgb(0, 0, 0);
   padding: 12px;
   border-radius: 6px;
   z-index: 1001;
@@ -305,9 +317,9 @@ cursor:pointer;
 }
 
 #audio-list li {
-  border-bottom:1px solid rgba(255,255,255,0.35);
-padding-bottom:12px;
-margin-bottom:12px;
+  border-bottom: 1px solid #b5b5b5;
+  padding: 10px 0 14px 0;
+  margin: 0;
 }
 
 .audio-id {
@@ -316,17 +328,43 @@ margin-bottom:12px;
   word-break: break-all;
 }
 
-.audio-controls button {
-  margin-right: 6px;
-  font-size:11px;
-  padding:3px 6px;
-  border-radius:6px;
-  gap:6px;
+.audio-controls button,
+#overlay-practice-button,
+#overlay-playonly-button,
+#overlay-play-button,
+#play-button,
+#enterButton {
+  font-family:
+    "MS PGothic",
+    "MS Gothic",
+    sans-serif;
+  font-size: 11px;
+  padding: 2px 8px;
+  margin-right: 4px;
+
+  background: #efefef;
+  color: #000;
+  border: 1px solid #000;
+  border-radius: 0;
+  box-shadow: 2px 2px 0 #000;
+  appearance: auto;
+  -webkit-appearance: auto;
 }
 
 
 
-
+#audio-panel-title {
+  font-family:
+    "MS PGothic",
+    "MS Gothic",
+    "Osaka",
+    sans-serif;
+  font-size: 28px;
+  line-height: 1.2;
+  font-weight: bold;
+  letter-spacing: 0;
+  margin: 3px;
+}
 
 
 
