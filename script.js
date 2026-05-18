@@ -4,16 +4,20 @@
 
 
 const audioBank = [
+  { id: "Moriyama_Unknown_1954", file: "audio/SataToshio_Shiga_Unknown_195X.mp3"},
+  { id: "Shiga_Unkown_20260503", file: "audio/Unkown_Shiga_Unkown_20260503.mp3"},
+  { id: "Shiga_Unknown_1998", file: "audio/Unknown_Shiga_Unknown_1997.mp3"},
+  { id: "Shiga_Unknown_19970322", file: "audio/Archive_Shiga_Unknown_19970322.mp3" },
   { id: "AomorikenHirakawashi_Senkotsu_202556", file: "audio/AomorikenHirakawashi_Senkotsu_202556.mp3" },
-  { id: "OsakaNakatsu_weather_zekkotsu_20250427", file: "audio/OsakaNakatsu_weather_zekkotsu_20250427.mp3" },
-  { id: "ChofushiSengawa_reiji_senkotsu_unknown", file: "audio/ChofushiSengawa_reiji_senkotsu.mp3" },
-  { id: "Nerimaku_kuko_zentoukotsu_20250202", file: "audio/Nerimaku_kuko_zentoukotsu_20250202.mp3" },
-  { id: "TokyoKitakuAkabanekita_Nozomu_Rokkotu_20250427", file: "audio/TokyoKitakuAkabanekita_Nozomu_Rokkotu_20250427.mp3" },
-  { id: "Tokyoshibuyaku_soulmatter_hidarikata_20250123", file: "audio/Tokyoshibuyaku_soulmatter_hidarikata_20250123.mp3" },
-  { id: "TokyoSendagi_idoi_migikenkoukotsu_20250427", file: "audio/TokyoSendagi_idoi_migikenkoukotsu_20250427.mp3" },
-  { id: "testaro_nishigyoku_migikata_20260313", file: "audio/testaro_nishigyoku_migikata_20260313-004038.mp3"},
-  { id: "MOB_SAKYOKU_MOBBONE_13", file: "audio/MOB_SAKYOKU_MOBBONE_13.mp3"},
-  { id: "falco_nagano_hiji_20260315", file: "audio/falco_nagano_hiji_20260315-163244.mp3"}
+  { id: "OsakaNakatsu_zekkotsu_20250427", file: "audio/OsakaNakatsu_weather_zekkotsu_20250427.mp3" },
+  { id: "ChofushiSengawa_senkotsu_unknown", file: "audio/ChofushiSengawa_reiji_senkotsu.mp3" },
+  { id: "Nerimaku_zentoukotsu_20250202", file: "audio/Nerimaku_kuko_zentoukotsu_20250202.mp3" },
+  { id: "KitakuAkabanekita_Rokkotu_20250427", file: "audio/TokyoKitakuAkabanekita_Nozomu_Rokkotu_20250427.mp3" },
+  { id: "Shibuyaku_hidarikata_20250123", file: "audio/Tokyoshibuyaku_soulmatter_hidarikata_20250123.mp3" },
+  { id: "Sendagi_migikenkoukotsu_20250427", file: "audio/TokyoSendagi_idoi_migikenkoukotsu_20250427.mp3" },
+  { id: "Kawachinagano_migikata_20260313", file: "audio/testaro_nishigyoku_migikata_20260313-004038.mp3"},
+  { id: "Sakyoku_MOBBONE_13", file: "audio/MOB_SAKYOKU_MOBBONE_13.mp3"},
+  { id: "Hirakata_hiji_20260315", file: "audio/falco_nagano_hiji_20260315-163244.mp3"}
 ];
 
 /* =========================
