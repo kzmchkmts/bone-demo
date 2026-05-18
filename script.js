@@ -4,9 +4,12 @@
 
 
 const audioBank = [
-  { id: "Moriyama_Unknown_1954", file: "audio/SataToshio_Shiga_Unknown_195X.mp3"},
+  { id: "Moriyama_Unknown_19540211", file: "audio/SataToshio_Shiga_Unknown_195X.mp3"},
+  { id: "Awaji_Unknown_20030704_1", file: "audio/Archive_Awaji_Unknown_2003.mp3"},
+  { id: "Awaji_Unknown_20030704_2", file: "audio/Archive_Awaji_Unknown2_2003.mp3"},
+  { id: "Sakai_Unknown_20120914", file: "audio/Archive_Sakai_Unknown_2012.mp3"},
   { id: "Shiga_Unkown_20260503", file: "audio/Unkown_Shiga_Unkown_20260503.mp3"},
-  { id: "Shiga_Unknown_1998", file: "audio/Unknown_Shiga_Unknown_1997.mp3"},
+  { id: "Shiga_Unknown_19981104", file: "audio/Unknown_Shiga_Unknown_1997.mp3"},
   { id: "Shiga_Unknown_19970322", file: "audio/Archive_Shiga_Unknown_19970322.mp3" },
   { id: "AomorikenHirakawashi_Senkotsu_202556", file: "audio/AomorikenHirakawashi_Senkotsu_202556.mp3" },
   { id: "OsakaNakatsu_zekkotsu_20250427", file: "audio/OsakaNakatsu_weather_zekkotsu_20250427.mp3" },
